@@ -1,0 +1,5 @@
+Flask==2.3.3
+python-dotenv==1.0.0
+Werkzeug==2.3.7
+webview==3.0.0
+PyMuPDF==1.21.1  # Usado para trabalhar com PDFs (fitz)
