@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orquestrador - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/robo.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar à esquerda -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='static/ilus_logo-branco.png') }}" alt="Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('home') }}" class="active">Robôs</a></li>
+                    <li><a href="{{ url_for('relatorios') }}">Relatório</a></li>
+                    <li><a href="{{ url_for('login') }}">Sair</a></li>
+                </ul>
+            </nav>            
+            <footer>
+                <p>BC-RPA-ORQ 1.0v<br>Developed by Leiene Neves</p>
+            </footer>
+        </aside>
+
+    <!-- Modal de Credenciais -->
+    <div id="credentialsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3 id="modalTitle">Configurar credenciais</h3>
+            <form id="credentialsForm">
+                <fieldset id="credentialsFields">
+                    <!-- Campos de credenciais serão preenchidos dinamicamente -->
+                </fieldset>
+            </form>
+        </div>
+    </div>
+    
+<!-- Modal de Aviso -->
+<div id="alertModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p id="alertMessage"></p>
+        <button class="btn-close" onclick="closeAlertModal()">Fechar</button>
+    </div>
+</div>
+
+<!-- Conteúdo principal -->
+<main class="main-content">
+    <header>
+        <div class="user-info">
+            <span class="username" id="username"></span>
+            <img src="{{ url_for('static', filename='static/user-icon.png') }}" alt="Ícone do usuário">
+        </div>
+    </header>
+
+    <!-- Seção de detalhes do robô -->
+    <section class="robot-details">
+        <h1>{{ robot_name }}</h1>
+        <div class="robot-description">
+            <article>
+                <p><strong>Processo:</strong> {{ robot_processo }}</p>
+                <p><strong>Unidade:</strong> {{ robot_unidade }}</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- Botões de execução -->
+    <div class="button-group">
+        <button class="btn-execute" onclick="executarRobo()">Executar Robô</button>
+    </div>
+
+    <!-- Pop-up de status -->
+    <div class="popup" id="popup">
+        <button class="close-button" onclick="closePopup()">X</button> <!-- Botão de fechar -->
+        <div id="loading" class="loading-spinner"></div>
+        <p id="popupMessage"></p>
+        <div class="button-container">
+            <button class="btn-pause" onclick="pausarRobo()">Pausar</button>
+        </div>
+    </div>
+
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM completamente carregado');
+        getLoggedInUser();  // Carrega o nome do usuário logado
+        carregarSistemasDoRobo();  // Carrega os sistemas do robô
+    });
+
+    // Função para obter o nome do usuário logado a partir da API
+    async function getLoggedInUser() {
+        try {
+            const response = await fetch('/api/get_logged_in_user');
+            const data = await response.json();
+
+            const usernameElement = document.getElementById('username');
+            if (data.username && usernameElement) {
+                usernameElement.textContent = data.username;
+                console.log(`Nome do usuário carregado: ${data.username}`);
+            } else {
+                console.warn('Usuário não encontrado ou elemento indisponível');
+                usernameElement.textContent = 'Usuário não encontrado';
+            }
+        } catch (error) {
+            console.error('Erro ao buscar o nome do usuário:', error);
+            const usernameElement = document.getElementById('username');
+            if (usernameElement) {
+                usernameElement.textContent = 'Erro ao carregar usuário';
+            }
+        }
+    }
+
+    // Funções de popup e alertas
+    function showAlert(message) {
+        const alertModal = document.getElementById('alertModal');
+        const alertMessage = document.getElementById('alertMessage');
+
+        if (alertMessage) alertMessage.textContent = message;
+        if (alertModal) alertModal.style.display = 'flex';
+        console.log(`Alerta exibido: ${message}`);
+    }
+
+    function closeAlertModal() {
+        const alertModal = document.getElementById('alertModal');
+        if (alertModal) alertModal.style.display = 'none';
+    }
+
+    async function definirNomeDoRobo(robotName) {
+        try {
+            const response = await fetch(`/set_robot_name/${robotName}`, { method: 'POST' });
+            const data = await response.json();
+            if (!response.ok) {
+                console.error('Erro ao definir o nome do robô:', data.message);
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao fazer a solicitação para definir o nome do robô:', error);
+        }
+    }
+
+    async function executarRobo() {
+        const popup = document.getElementById('popup');
+        const loadingSpinner = document.getElementById('loading');
+        const popupMessage = document.getElementById('popupMessage');
+
+        // Exibe o popup e o spinner
+        popupMessage.textContent = 'Executando o robô...';
+        popup.style.display = 'flex';
+        loadingSpinner.classList.add('active');  // Mostra o spinner
+
+        try {
+            const response = await fetch('/api/execute_robot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                popupMessage.textContent = data.message;  // Exibe a mensagem de sucesso
+                console.log("Saída do robô:", data.output);
+            } else {
+                popupMessage.textContent = "Erro: " + data.message;  // Exibe a mensagem de erro
+                console.error("Erro ao executar o robô:", data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao fazer a solicitação para executar o robô:', error);
+            popupMessage.textContent = 'Erro ao fazer a solicitação para executar o robô';
+        } finally {
+            // Oculta o spinner ao final da execução
+            loadingSpinner.classList.remove('active');
+        }
+    }
+
+    async function pausarRobo() {
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popupMessage');
+        const pauseButton = document.querySelector('.button-container button'); // Certifique-se de que é o botão correto
+        const spinner = document.querySelector('loading-spinner'); 
+
+        try {
+            // Mostra o spinner antes de iniciar a solicitação
+            if (spinner) {
+                spinner.style.display = 'block';
+            }
+
+            const response = await fetch('/api/cancel_robot_execution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') { // Verifica se a resposta tem o status de sucesso
+                console.log(data.message);  // Log de sucesso
+
+                // Atualiza a mensagem do pop-up
+                popupMessage.textContent = 'Execução pausada com sucesso';
+
+                // Oculta o spinner quando a mensagem de sucesso for exibida
+                if (spinner) {
+                    console.log('Spinner encontrado e ocultado.');
+                    spinner.style.display = 'none'; // Oculta o spinner
+                } else {
+                    console.log('Spinner não encontrado.');
+                }
+
+                // Oculta ou desativa o botão "Pausar"
+                pauseButton.disabled = true; // Desativa o botão
+                pauseButton.style.display = 'none'; // Opcionalmente, oculta o botão
+
+                // Mantém o pop-up visível
+                popup.style.display = 'flex';
+            } else {
+                console.error("Erro ao pausar a execução do robô:", data.message);
+                popupMessage.textContent = "Erro ao pausar a execução: " + data.message;
+
+                // Oculta o spinner em caso de erro
+                if (spinner) {
+                    spinner.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao fazer a solicitação para pausar o robô:', error);
+            popupMessage.textContent = 'Erro ao pausar a execução do robô. Verifique sua conexão ou tente novamente mais tarde.';
+
+            // Oculta o spinner em caso de erro
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+        } finally {
+            // Certifique-se de que o pop-up seja exibido, mesmo em caso de erro
+            popup.style.display = 'flex';
+        }
+    }
+
+
+    // Função para fechar o popup
+    async function closePopup() {
+        // Envia uma solicitação para interromper a execução do robô
+        try {
+            const response = await fetch('/api/cancel_robot_execution', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                console.log(data.message);  // Log de sucesso
+            } else {
+                console.error("Erro ao cancelar a execução do robô:", data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar solicitação para cancelar o robô:', error);
+        }
+
+        // Fecha o popup
+        const popup = document.getElementById('popup');
+        popup.style.display = 'none';
+        }
+
+    function redirectToRobotPage() {
+        const robotName = '{{ robot_name }}';
+        console.log(`Redirecionando para a página do robô: ${robotName}`);
+        window.location.href = `/robo/${robotName}`;
+    }
+</script>
+
+</body>
+</html>

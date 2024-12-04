@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/relatorios.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Importar Chart.js para gráficos -->
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar à esquerda -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='static/ilus_banesecard-branco.png') }}" alt="Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('home') }}">Robôs</a></li>
+                    <li><a href="{{ url_for('relatorios') }}" class="active">Relatório</a></li>
+                    <li><a href="{{ url_for('login') }}">Sair</a></li>
+                </ul>
+            </nav>
+            <footer>
+                <p>BC-RPA-ORQ 1.0v<br>Developed by Leiene Neves</p>
+            </footer>
+        </aside>
+
+        <!-- Conteúdo principal -->
+        <main class="main-content">
+            <header>
+                <h1>Relatórios de Automação</h1>
+            </header>
+
+            <section class="dashboard-cards">
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-robot"></i></div>
+                    <div class="card-info">
+                        <h3>Total de Robôs</h3>
+                        <p id="total-robots">{{ robot_names | length }}</p> <!-- Exibe o número total de robôs -->
+                    </div>
+                </div>
+            
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-play-circle"></i></div>
+                    <div class="card-info">
+                        <h3>Total de Execuções</h3>
+                        <p id="total-executions">{{ robot_executions | sum }}</p> <!-- Soma o total de execuções -->
+                    </div>
+                </div>
+            
+                <div class="card">
+                    <div class="card-icon"><i class="fas fa-times-circle"></i></div>
+                    <div class="card-info">
+                        <h3>Erros</h3>
+                        <p id="total-errors">{{ robot_errors | sum }}</p> <!-- Soma o total de erros -->
+                    </div>
+                </div>
+            </section>
+        <!-- Filtros de busca -->
+        <section class="filters">
+            <select id="robotFilter">
+                <option value="">Todos os Robôs</option>
+                {% for name in robot_names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="logTypeFilter">
+                <option value="">Todos os Tipos de Log</option>
+                <option value="INFO">INFO</option>
+                <option value="ERROR">ERROR</option>
+                <!-- Adicione outros tipos conforme necessário -->
+            </select>
+
+            <!-- Filtro de Usuários -->
+            <select id="userFilter">
+                <option value="">Todos os Usuários</option>
+                {% set users = [] %}
+                {% for robot_name, log_lines in logs.items() %}
+                    {% for line in log_lines %}
+                        {% set parts = line.split(' - ') %}
+                        {% set user = parts[2].split(': ')[1] if parts|length >= 3 and 'User' in parts[2] else 'Desconhecido' %}
+                        {% if user not in users %}
+                            {% set _ = users.append(user) %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+                {% for user in users %}
+                    <option value="{{ user }}">{{ user }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="text" id="messageSearch" placeholder="Buscar mensagem">
+
+            <button onclick="filterLogs()">Filtrar</button>
+        </section>
+
+    <!-- Tabela de relatórios -->
+    <section class="report-table">
+        <h2>Relatório Detalhado dos Robôs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome do Robô</th>
+                    <th onclick="toggleSortOrder()" style="cursor: pointer;">
+                        Data e Hora
+                        <i class="fas fa-sort" id="sortIcon"></i> <!-- Ícone de ordenação -->
+                    </th>
+                    <th>Tipo de Log</th>
+                    <th>Usuário</th> <!-- Coluna de usuário -->
+                    <th>Mensagem</th>
+                    <th>Baixar Log</th>
+                </tr>
+            </thead>            
+            <tbody id="report-rows">
+                {% if logs %}
+                    {% for robot_name, log_lines in logs.items() %}
+                        {% for line in log_lines %}
+                            {% set parts = line.split(' - ') %}
+                            {% set user = 'Desconhecido' %} <!-- Valor padrão caso o usuário não seja identificado -->
+                            {% if parts|length >= 3 and 'User' in parts[2] %}
+                                {% set user = parts[2].split(': ')[1] %}
+                            {% endif %}
+                            <tr class="log-row" data-robot="{{ robot_name }}" data-log="{{ 'INFO' if 'INFO' in line else 'ERROR' }}" data-user="{{ user | lower }}" data-message="{{ line }}">
+                                <td>{{ robot_name }}</td>
+                                {% if parts|length >= 4 %}
+                                    <td>{{ parts[0] }}</td> <!-- Data e Hora -->
+                                    <td>{{ parts[1].strip() }}</td> <!-- Tipo de Log -->
+                                    <td>{{ user }}</td> <!-- Exibe o usuário corretamente -->
+                                    <td>{{ parts[3] }}</td> <!-- Mensagem -->
+                                {% else %}
+                                    <td colspan="4">{{ line }}</td> <!-- Exibe a linha completa se houver erro de formato -->
+                                {% endif %}
+                                <td class="table-icon">
+                                    <a href="{{ url_for('download_log', robot_name=robot_name) }}" class="btn-download-log">
+                                        <i class="fas fa-download"></i> <!-- Ícone de download -->
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6">Nenhum log disponível.</td>
+                    </tr>
+                {% endif %}
+            </tbody>                                                                 
+        </table>                                
+    </section>
+
+    </main>
+    </div>
+
+    <script>
+        let sortOrder = 'desc'; // Ordem inicial: mais recente para mais antiga
+
+        // Função para alternar a ordem de ordenação
+        function toggleSortOrder() {
+            sortOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
+            sortLogs(sortOrder);
+        }
+
+        // Função para converter string de data para objeto Date
+        function parseDate(dateString) {
+            // Tenta converter a string de data no formato esperado (ex.: "2024-10-22 09:33:01")
+            const parts = dateString.split(' '); // Separa a data da hora
+            const dateParts = parts[0].split('-'); // Separa ano, mês e dia
+            const timeParts = parts[1].split(':'); // Separa hora, minuto e segundo
+
+            return new Date(
+                parseInt(dateParts[0]),    // Ano
+                parseInt(dateParts[1]) - 1, // Mês (0-indexado)
+                parseInt(dateParts[2]),    // Dia
+                parseInt(timeParts[0]),    // Hora
+                parseInt(timeParts[1]),    // Minuto
+                parseInt(timeParts[2])     // Segundo
+            );
+        }
+
+        // Função para ordenar os logs na tabela
+        function sortLogs(order) {
+            const rows = Array.from(document.querySelectorAll('.log-row'));
+            const tableBody = document.getElementById('report-rows');
+            const sortIcon = document.getElementById('sortIcon');
+
+            // Ordenar as linhas com base na data e hora (coluna 2)
+            rows.sort((a, b) => {
+                const dateA = parseDate(a.cells[1].textContent.trim());
+                const dateB = parseDate(b.cells[1].textContent.trim());
+
+                return (order === 'asc') ? dateA - dateB : dateB - dateA;
+            });
+
+            // Atualiza o ícone de ordenação
+            sortIcon.className = (order === 'asc') ? 'fas fa-sort-up' : 'fas fa-sort-down';
+
+            // Reorganiza as linhas na tabela
+            tableBody.innerHTML = '';
+            rows.forEach(row => tableBody.appendChild(row));
+        }
+
+    
+        // Função para filtrar os logs na tabela
+        function filterLogs() {
+            const robotFilter = document.getElementById('robotFilter').value.toLowerCase();
+            const logTypeFilter = document.getElementById('logTypeFilter').value.toLowerCase();
+            const userFilter = document.getElementById('userFilter').value.toLowerCase(); // Adiciona o filtro de usuário
+            const messageSearch = document.getElementById('messageSearch').value.toLowerCase();
+
+            const rows = document.querySelectorAll('.log-row');
+
+            rows.forEach(row => {
+                const robot = row.getAttribute('data-robot').toLowerCase();
+                const logType = row.getAttribute('data-log').toLowerCase();
+                const user = row.getAttribute('data-user').toLowerCase();
+                const message = row.getAttribute('data-message').toLowerCase();
+
+                // Verifica se a linha corresponde aos filtros
+                const matchesRobot = !robotFilter || robot.includes(robotFilter);
+                const matchesLogType = !logTypeFilter || logType.includes(logTypeFilter);
+                const matchesUser = !userFilter || user.includes(userFilter);
+                const matchesMessage = !messageSearch || message.includes(messageSearch);
+
+                if (matchesRobot && matchesLogType && matchesUser && matchesMessage) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    
+
+            // Função para alternar a ordem de classificação (data e hora)
+    function toggleSortOrder() {
+        const rows = Array.from(document.querySelectorAll('#report-rows .log-row'));
+        const sortIcon = document.getElementById('sortIcon');
+
+        // Ordenar as linhas com base na data e hora
+        const sortedRows = rows.sort((a, b) => {
+            const dateA = new Date(a.cells[1].innerText);
+            const dateB = new Date(b.cells[1].innerText);
+            return dateA - dateB;
+        });
+
+        // Inverter a ordem de classificação, se necessário
+        if (sortIcon.classList.contains('fa-sort-up')) {
+            sortedRows.reverse();
+            sortIcon.classList.remove('fa-sort-up');
+            sortIcon.classList.add('fa-sort-down');
+        } else {
+            sortIcon.classList.remove('fa-sort-down');
+            sortIcon.classList.add('fa-sort-up');
+        }
+
+        // Atualizar a tabela com as linhas ordenadas
+        const tbody = document.getElementById('report-rows');
+        tbody.innerHTML = '';
+        sortedRows.forEach(row => tbody.appendChild(row));
+    }
+
+        // Inicializa a ordenação decrescente ao carregar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            sortLogs(sortOrder);
+        });
+    
+        // Dados para o gráfico de execuções
+        const robotLabels = JSON.parse('{{ robot_names | tojson | safe }}');
+        const executionData = JSON.parse('{{ robot_executions | tojson | safe }}');
+        const errorData = JSON.parse('{{ robot_errors | tojson | safe }}');
+    
+        const executionsData = {
+            labels: robotLabels,
+            datasets: [{
+                label: 'Total de Execuções',
+                data: executionData,
+                backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#e57373', '#ba68c8']
+            }]
+        };
+    
+        const executionsConfig = {
+            type: 'bar',
+            data: executionsData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+    
+        new Chart(document.getElementById('executionsChart'), executionsConfig);
+    
+        // Dados para o gráfico de erros
+        const errorsData = {
+            labels: robotLabels,
+            datasets: [{
+                label: 'Total de Erros',
+                data: errorData,
+                backgroundColor: ['#e53935', '#fdd835', '#43a047', '#ffb74d', '#64b5f6']
+            }]
+        };
+    
+        const errorsConfig = {
+            type: 'bar',
+            data: errorsData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+    
+        new Chart(document.getElementById('errorsChart'), errorsConfig);
+    </script>
+    
+    
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html> 
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Orquestrador</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/login.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="illustration">
+            <img src="{{ url_for('static', filename='static/ilus_logo-branco.png') }}" alt="Ilustração">
+        </div>
+        <div class="login-box">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='static/logo.png') }}" alt="Logo">
+            </div>
+            <h2>Bem vindo ao RPA Homologação!</h2>
+            <form id="loginForm">
+                <input type="text" id="username" name="username" placeholder="Usuário" required>
+                <input type="password" id="password" name="password" placeholder="Senha" required>
+
+                <div class="options">
+                    <label>
+                        <input type="checkbox" name="remember"> Lembrar
+                    </label>
+                    <a href="{{ url_for('forgot_password') }}" class="forgot-password">Esqueceu a senha?</a>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fa fa-user">Entrar</i>
+                </button>                
+            </form>
+
+            <!-- Div para mostrar as mensagens de erro -->
+            <div id="error-message" style="color: red; margin-top: 10px;"></div>
+
+        </div>
+    </div>
+
+<div id="welcomeModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <p id="welcomeMessage"></p>
+    </div>
+</div>
+    
+<!-- Modal de Erro -->
+<div id="loginAlertModal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+    <div class="modal-content">
+        <p id="loginAlertMessage"></p>
+        <button id="tryAgainButton" class="tryAgainButton">Tente Novamente</button>
+    </div>
+</div>
+
+<!-- Modal de Sucesso -->
+<div id="successModal" class="modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+    <div class="modal-content">
+        <p id="successMessage">Senha redefinida com sucesso!</p>
+    </div>
+</div>
+
+    <!-- Inserir mensagens de sucesso diretamente no HTML
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+        {% if category == 'success' %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    showSuccessAlert("{{ message }}");
+                });
+            </script>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% endwith %} -->
+
+    <!-- Fonte awesome para ícones -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+    <script>
+
+     // Script de login
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            // Faz a requisição ao backend
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Exibe o modal de boas-vindas
+                showWelcomeAlert(result.message);
+                // Redireciona após 2 segundos
+                setTimeout(() => {
+                    window.location.href = '/home';
+                }, 2000);
+            } else if (result.status === 'error') {
+                // Exibe o modal de erro
+                showLoginAlert(result.message);
+            }
+        } catch (error) {
+            console.error('Erro ao tentar fazer login:', error);
+            // Exibe um modal para erros inesperados
+            showLoginAlert('Erro inesperado. Por favor, tente novamente mais tarde.');
+        }
+    });
+
+        function showWelcomeAlert(message) {
+            const welcomeModal = document.getElementById('welcomeModal');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            
+            welcomeMessage.textContent = message;
+            welcomeModal.style.display = 'flex'; // Exibe o modal
+        }
+            // Exibe o pop-up de aviso de login estilizado
+        function showLoginAlert(message) {
+                const loginAlertModal = document.getElementById('loginAlertModal');
+                const loginAlertMessage = document.getElementById('loginAlertMessage');
+                
+                loginAlertMessage.textContent = message;
+                loginAlertModal.style.display = 'flex'; // Exibe o modal
+            }
+
+            // Botão "Tente Novamente"
+            document.getElementById('tryAgainButton').addEventListener('click', function () {
+                document.getElementById('loginAlertModal').style.display = 'none'; // Fecha o modal
+        });
+
+       
+        // Função para exibir o modal de sucesso
+        function showSuccessAlert(message) {
+            const successModal = document.getElementById('successModal');
+            const successMessage = document.getElementById('successMessage');
+            
+            successMessage.textContent = message;
+            successModal.style.display = 'flex'; // Exibe o modal de sucesso
+        }
+
+        // Fechar modais se necessário
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+
+    </script>    
+</body>
+</html>

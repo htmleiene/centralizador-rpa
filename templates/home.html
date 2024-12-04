@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orquestrador - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/home.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar à esquerda -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='static/ilus_logo-branco.png') }}" alt="Logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('home') }}" class="active">Robôs</a></li>
+                    <li><a href="{{ url_for('relatorios') }}">Relatório</a></li>
+                    <li><a href="{{ url_for('login') }}">Sair</a></li>
+                </ul>
+            </nav>            
+            <footer>
+                <p>BC-RPA-ORQ 1.0v<br>Developed by Leiene Neves</p>
+            </footer>
+        </aside>
+
+        <!-- Conteúdo principal -->
+        <main class="main-content">
+            <header>
+                <h1>Robôs Disponíveis</h1>
+                <div class="user-info">
+                    <span class="username" id="username"></span>
+                    <img src="{{ url_for('static', filename='static/user-icon.png') }}" alt="Ícone do usuário">
+                </div>
+            </header>
+
+               <!-- Seção de robôs -->
+               <section class="robots-section" id="robots-container">
+                <!-- JavaScript will dynamically add robot cards here -->
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Function to get the logged-in user's name from the API
+        async function getLoggedInUser() {
+            try {
+                const response = await fetch('/api/get_logged_in_user');
+                const data = await response.json();
+
+                const usernameElement = document.getElementById('username');
+                if (data.username && usernameElement) {
+                    usernameElement.textContent = data.username;
+                } else {
+                    usernameElement.textContent = 'Usuário não encontrado';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar o nome do usuário:', error);
+                const usernameElement = document.getElementById('username');
+                if (usernameElement) {
+                    usernameElement.textContent = 'Erro ao carregar usuário';
+                }
+            }
+        }
+
+        // Fetch robots associated with the logged-in user
+        function fetchUserRobots() {
+            fetch('/api/get_user_robots')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response data:", data);  // Log response for debugging
+                    if (data.robots) {
+                        displayRobots(data.robots);
+                    } else if (data.status === 'error') {
+                        console.error(data.message);
+                        displayError(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao obter os robôs do usuário:', error);
+                    displayError('Erro ao obter os robôs do usuário.');
+                });
+        }
+
+
+        // Display each robot's process name on the page
+        function displayRobots(robots) {
+            const robotsContainer = document.getElementById('robots-container');
+            robotsContainer.innerHTML = '';  // Clear any existing content
+
+            robots.forEach((robot, index) => {
+                const robotElement = document.createElement('div');
+                robotElement.classList.add('robot-card');
+
+                // Acesse as propriedades retornadas pela função Python
+                const processName = robot.processo || 'Processo não especificado';
+                const unidade = robot.unidade || 'Unidade não especificada';
+                const cargoExecutor = robot.cargo_executor || 'Nenhum executor disponível';
+                const sistemasUtilizados = robot.sistemas_utilizados.length > 0 ? robot.sistemas_utilizados.join(', ') : 'Nenhum sistema especificado';
+
+                // Atualize o HTML do elemento do robô
+                robotElement.innerHTML = `
+                    <div class="robot-icon">${index + 1}</div>
+                    <div class="robot-details">
+                        <h2>${robot.nome}</h2>
+                        <p><strong>Processo:</strong> ${processName}</p>
+                    </div>
+                    <div class="robot-action">
+                        <a href="/robo/${robot.nome}" class="btn">Ver Detalhes</a>
+                    </div>
+                `;
+
+                robotsContainer.appendChild(robotElement);
+            });
+        }
+
+
+        // Display error message if there are issues fetching data
+        function displayError(message) {
+            const robotsContainer = document.getElementById('robots-container');
+            robotsContainer.innerHTML = `<p class="error">${message}</p>`;
+        }
+
+        // Execute functions when the page loads
+        window.onload = function() {
+            getLoggedInUser();  // Load the logged-in user's name
+            fetchUserRobots();  // Load the list of robots
+        };
+    </script>
+</body>
+</html>

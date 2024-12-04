@@ -1,0 +1,302 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f9;
+    display: flex;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #203731;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh; /* Sidebar ocupa toda a altura da janela */
+    position: fixed; /* Fixa a posição da sidebar */
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.sidebar nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar nav ul li {
+    margin: 15px 0;
+}
+
+.sidebar nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    display: block;
+    padding: 10px 0;
+}
+
+.sidebar nav ul li a.active {
+    background-color: #2e7d32;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* Ajuste para reduzir o tamanho do logo */
+.sidebar .logo img {
+    width: 150px; /* Ajuste o tamanho conforme desejar */
+    margin: 45px;
+    margin-bottom: 40px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto; /* Centraliza o logo horizontalmente */
+}
+
+/* Centralizar o texto do footer */
+.sidebar footer p {
+    font-size: 12px;
+    text-align: center; /* Centraliza o texto */
+    margin-top: 40px; /* Opcional: adiciona espaço acima do rodapé */
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 40px;
+    margin-left: 250px; /* Ajusta o conteúdo para não ficar em cima da sidebar */
+    overflow-x: auto;
+}
+
+header {
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 24px;
+    color: #2e7d32;
+}
+
+/* Estilo geral para os cards no dashboard */
+.dashboard-cards {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    flex: 1;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.card-icon {
+    font-size: 40px;
+    color: #2e7d32;
+}
+
+.card-info h3 {
+    margin-bottom: 5px;
+    font-size: 18px;
+}
+
+.card-info p {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Gráficos - manter os gráficos lado a lado e adaptáveis */
+.dashboard-charts {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+h2 {
+    margin-left: 10px;
+    display: flex;
+    font-size: 1.5em;
+    margin-block-start: 0.85em;
+    margin-block-end: 0.85em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+}
+
+.chart-container {
+    flex: 1;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    min-width: 200px;  /* Limita o tamanho mínimo dos gráficos */
+    max-width: 45%;    /* Limita a largura máxima para ocupar menos espaço */
+}
+
+/* Evitar que gráficos se expandam muito */
+.chart-container canvas {
+    max-width: 100%; /* Ajuste responsivo para os gráficos */
+}
+
+/* Relatório detalhado */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-top: 40px;
+}
+
+.report-table th, .report-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.report-table th {
+    background-color: #f4f4f9;
+    font-size: 16px;
+    color: #555;
+}
+
+
+.logs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.log-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.log-card h3 {
+    margin-bottom: 10px;
+}
+
+.log-card pre {
+    max-height: 300px;
+    overflow-y: scroll;
+    background-color: #f4f4f4;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+
+.log-error {
+    color: red;
+    font-weight: bold;
+}
+
+.log-success {
+    color: green;
+    font-weight: bold;
+}
+
+.log-info {
+    color: gray;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+td {
+    vertical-align: middle;
+    padding: 15px;
+}
+
+.btn-download-log {
+    color: #fff;
+    background-color: #4CAF50;
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    text-align: center;
+}
+
+.btn-download-log i {
+    margin-right: 8px;
+}
+
+.btn-download-log:hover {
+    background-color: #45a049;
+}
+
+/* Centraliza o conteúdo da célula */
+.table-icon {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Evita que os ícones sejam cortados */
+td.table-icon {
+    width: 50px; /* Ajuste conforme necessário */
+}
+
+.filters {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filters select, .filters input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.filters button {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.filters button:hover {
+    background-color: #388e3c;
+}
